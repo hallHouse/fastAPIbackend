@@ -1,8 +1,7 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-app = FastAPI()
 
-# Iniciar el servidor con: uvicorn users:app --reload
+router = APIRouter()
 
 # Entidad user
 class User(BaseModel):
@@ -16,35 +15,36 @@ user_list = [User(id=1,name='sergio',surname='xrpew',url='www.com',edad=23),
             User(id=2,name='sergio',surname='xrpew',url='www.com',edad=23),
             User(id=3,name='sergio',surname='xrpew',url='www.com',edad=23)]
 
-@app.get('/usersjson')
+@router.get('/json')
 async def usersjson():
     return [{'name':'sergio', 'surname':'xrpew', 'url':'xrpew.com', 'edad':34},
     {'name':'gaby', 'surname':'any', 'url':'xrpew.com', 'edad':34},
     {'name':'alejandro', 'surname':'ale', 'url':'google.com', 'edad':34},
     {'name':'perez', 'surname':'pew', 'url':'xrpew.com', 'edad':34}]
 
-@app.get('/users')
+@router.get('/users')
 async def users():
     return user_list
 
 # Path
-@app.get('/user/{id}')
+@router.get('/user/{id}')
 async def user(id:int):
     return search_user(id)
 
 # Query
-@app.get('/user/')
+@router.get('/user/')
 async def user(id:int):
     return search_user(id)
 
-@app.post('/user/')
+@router.post('/user/', status_code=201)
 async def user(user: User):
     if type(search_user(user.id)) == User:
-        return {'error':'usuario ya existe'}
+        raise HTTPException(status_code=404, detail='El usuario ya existe')
+
     user_list.append(user) 
     return {'ok':'Usuario agregado'}
 
-@app.put('/user/')
+@router.put('/user/')
 async def user(user:User):
     found = False
     for index, saved_user in enumerate(user_list):
@@ -52,11 +52,11 @@ async def user(user:User):
             user_list[index] = user
             found = True    
     if not found:
-        return {'error':'usuario no encontrado'}
-
+        raise HTTPException(status_code=404, detail='El usuario no existe')
+        
     return {'ok':'usuario actualizado' }
 
-@app.delete('/user/{id}')
+@router.delete('/user/{id}')
 async def user(id:int):
 
     found = False
